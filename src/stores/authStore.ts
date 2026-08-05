@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import * as configService from '../services/config'
 import { fromBase64Url } from '@/utils/base64'
+import { timingSafeEqualHex } from '@/utils/crypto'
 
 interface AuthState {
     isAuthEnabled: boolean
@@ -211,7 +212,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             const { hash } = await hashPassword(password, savedSalt)
 
-            if (hash === savedHash) {
+            if (timingSafeEqualHex(hash, savedHash)) {
                 set({
                     isLocked: false,
                     isAuthenticated: true
