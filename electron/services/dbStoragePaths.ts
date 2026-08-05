@@ -70,7 +70,9 @@ function collectByName(root: string, matcher: (name: string) => boolean, depth =
 }
 
 function isMessageDbName(name: string): boolean {
-  return /^(?:msg|message)_\d+\.db$/i.test(name)
+  // 私聊/群聊消息在 message_*.db / msg_*.db；公众号消息在 biz_message_*.db，
+  // 漏掉会导致公众号会话查不到消息表、右侧空白。biz_message 表结构与普通消息库一致。
+  return /^(?:msg|message|biz_message)_\d+\.db$/i.test(name)
 }
 
 function collectDirectFiles(root: string, matcher: (name: string) => boolean): string[] {
