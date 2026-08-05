@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { existsSync, readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync, mkdtempSync, renameSync, statSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync, mkdtempSync, renameSync, cpSync, statSync } from 'fs'
 import { basename, isAbsolute, join, relative, resolve } from 'path'
 import AdmZip from 'adm-zip'
 import type { AgentSkillContextItem } from './agent/types'
@@ -438,7 +438,17 @@ export class SkillManagerService {
         return { success: false, error: `Skill directory "${skillName}" already exists` }
       }
 
-      renameSync(extractedDir, destDir)
+      // rename 在同一文件系统内是原子的；但 tempDir 建在 userData（可能 C 盘），
+      // 目标 skills 目录可能是另一个盘（如 D 盘），跨设备 rename 会抛 EXDEV。
+      // 失败时回退为「复制 + 删除」，保证跨盘导入可用（#280）。
+      try {
+        renameSync(extractedDir, destDir)
+      } catch (renameError: unknown) {
+        const code = (renameError as NodeJS.ErrnoException)?.code
+        if (code !== 'EXDEV') throw renameError
+        cpSync(extractedDir, destDir, { recursive: true })
+        rmSync(extractedDir, { recursive: true, force: true })
+      }
       this.invalidateSkillCaches()
       return { success: true, skillName }
     } catch (error) {
