@@ -84,17 +84,17 @@ export async function getMessages(state: ChatServiceState,
                  LEFT JOIN Name2Id n ON m.real_sender_id = n.rowid
                  ORDER BY m.sort_seq DESC, m.create_time DESC, m.local_id DESC
                  LIMIT ? OFFSET ?`
-          params = [myRowId, minFetchPerDb, 0]
+          params = [myRowId, minFetchPerDb, offset]
         } else if (hasName2IdTable) {
           sql = `SELECT m.*, n.user_name AS sender_username
                  FROM ${tableName} m
                  LEFT JOIN Name2Id n ON m.real_sender_id = n.rowid
                  ORDER BY m.sort_seq DESC, m.create_time DESC, m.local_id DESC
                  LIMIT ? OFFSET ?`
-          params = [minFetchPerDb, 0]
+          params = [minFetchPerDb, offset]
         } else {
           sql = `SELECT * FROM ${tableName} ORDER BY sort_seq DESC, create_time DESC, local_id DESC LIMIT ? OFFSET ?`
-          params = [minFetchPerDb, 0]
+          params = [minFetchPerDb, offset]
         }
 
         const rows = await dbAdapter.all<any>('message', dbPath, sql, params)
@@ -236,10 +236,10 @@ export async function getMessages(state: ChatServiceState,
       return true
     })
 
-    // 应用 offset 和 limit
+    // 应用 offset 和 limit（SQL 层已按 offset 取数，这里只截前 limit 条）
     // hasMore 多报安全（下一页拉空时前端会自行收口），少报会让用户永远翻不到更早的消息
-    const hasMore = allMessages.length > offset + limit || anyDbHitFetchLimit
-    const messages = allMessages.slice(offset, offset + limit)
+    const hasMore = allMessages.length > limit || anyDbHitFetchLimit
+    const messages = allMessages.slice(0, limit)
 
     // 反转使最新消息在最后（UI 显示顺序）
     messages.reverse()
