@@ -311,6 +311,7 @@
       "node_modules/zod/**/*",
       "node_modules/ai/**/*",
       "node_modules/@ai-sdk/**/*",
+      "node_modules/@modelcontextprotocol/**/*",
       "node_modules/undici/**/*",
       "node_modules/@opentelemetry/**/*",
       "node_modules/@vercel/oidc/**/*",
